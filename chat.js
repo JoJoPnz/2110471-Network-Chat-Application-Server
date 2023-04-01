@@ -30,6 +30,7 @@ class Connection {
 
     socket.on("getMessages", () => this.getMessages());
     socket.on("message", (value) => this.handleMessage(value));
+    socket.on("getUsername", () => this.getUsername());
     socket.on("setUsername", (userName) => this.setUsername(userName));
     socket.on("disconnect", () => this.disconnect());
     socket.on("connect_error", (err) => {
@@ -43,6 +44,10 @@ class Connection {
 
   getMessages() {
     messages.forEach((message) => this.sendMessage(message));
+  }
+
+  getUsername() {
+    this.io.sockets.emit("getUsername", users.get(this.socket));
   }
 
   handleMessage(value) {
