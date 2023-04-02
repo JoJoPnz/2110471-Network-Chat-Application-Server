@@ -32,6 +32,7 @@ class Connection {
     socket.on("message", (value) => this.handleMessage(value));
     socket.on("getUsername", () => this.getUsername());
     socket.on("setUsername", (userName) => this.setUsername(userName));
+    socket.on("getAllClient", () => this.getAllClient());
     socket.on("disconnect", () => this.disconnect());
     socket.on("connect_error", (err) => {
       console.log(`connect_error due to ${err.message}`);
@@ -47,7 +48,7 @@ class Connection {
   }
 
   getUsername() {
-    this.io.sockets.emit("getUsername", users.get(this.socket));
+    this.socket.emit("getUsername", users.get(this.socket));
   }
 
   handleMessage(value) {
@@ -77,10 +78,19 @@ class Connection {
 
   setUsername(userName) {
     if (this.checkDuplicateName(userName)) {
-      this.io.sockets.emit("errorDuplicateName", userName);
+      this.socket.emit("errorDuplicateName", userName);
     } else {
       users.set(this.socket, userName);
     }
+  }
+
+  getAllClient() {
+    var a = [];
+    var b = users.values();
+    for (var e of b) {
+      a.push(e);
+    }
+    this.socket.emit("getAllClient", a);
   }
 
   disconnect() {
