@@ -1,16 +1,12 @@
 const uuidv4 = require("uuid").v4;
 
 const messages = new Set();
-const users = new Map(); // userSocket => userName
-
-const defaultUser = {
-  id: "anon",
-  name: "Anonymous",
-};
+// const messages = new Map(); // roomId => {  }
+const users = new Map(); // userSocket => username
 
 const messageExpirationTimeMS = 5 * 60 * 1000;
 
-const initName = () => {
+const initUsername = () => {
   return "Anonymous" + uuidv4().slice(0, 5);
 };
 
@@ -19,19 +15,19 @@ class Connection {
     this.socket = socket;
     this.io = io;
 
-    // add new user with random name
-    users.set(socket, initName());
+    // add new user with random username
+    users.set(socket, initUsername());
     console.log(
-      `User connected socket id: ${socket.id} with initial name: ${users.get(
-        socket
-      )}`
+      `User connected socket id: ${
+        socket.id
+      } with initial username: ${users.get(socket)}`
     );
     console.log(`There are ${users.size} users now\n.`);
 
     socket.on("getMessages", () => this.getMessages());
     socket.on("message", (value) => this.handleMessage(value));
     socket.on("getUsername", () => this.getUsername());
-    socket.on("setUsername", (userName) => this.setUsername(userName));
+    socket.on("setUsername", (username) => this.setUsername(username));
     socket.on("getAllClient", () => this.getAllClient());
     socket.on("disconnect", () => this.disconnect());
     socket.on("connect_error", (err) => {
@@ -54,7 +50,7 @@ class Connection {
   handleMessage(value) {
     const message = {
       id: uuidv4(),
-      user: users.get(this.socket) || defaultUser,
+      user: users.get(this.socket),
       value,
       time: Date.now(),
     };
@@ -68,29 +64,32 @@ class Connection {
     }, messageExpirationTimeMS);
   }
 
-  checkDuplicateName(userName) {
-    const allUserName = Array.from(users.values());
-    if (allUserName.includes(userName)) {
+  checkDuplicateName(username) {
+    const allUsername = Array.from(users.values());
+    if (allUsername.includes(username)) {
       return true;
     }
     return false;
   }
 
-  setUsername(userName) {
-    if (this.checkDuplicateName(userName)) {
-      this.socket.emit("errorDuplicateName", userName);
+  setUsername(username) {
+    if (this.checkDuplicateName(username)) {
+      this.socket.emit("errorDuplicateUsername", username);
     } else {
-      users.set(this.socket, userName);
+      users.set(this.socket, username);
+      this.socket.emit("getUsername", username);
     }
   }
 
   getAllClient() {
-    var a = [];
-    var b = users.values();
-    for (var e of b) {
-      a.push(e);
+    const allClient = [];
+    for (const entry of users.entries()) {
+      const clientSocket = entry[0];
+      const clientSocketId = clientSocket.id;
+      const clientUsername = entry[1];
+      allClient.push({ id: clientSocketId, username: clientUsername });
     }
-    this.socket.emit("getAllClient", a);
+    this.socket.emit("getAllClient", allClient);
   }
 
   disconnect() {
