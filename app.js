@@ -4,8 +4,17 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var cors = require("cors");
 
-var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+// Route files
+const auth = require("./routes/auth");
+
+const dotenv = require("dotenv");
+const connectDB = require("./config/db");
+
+// Load env vars
+dotenv.config({ path: "./config/config.env" });
+
+// Connect to database
+connectDB();
 
 var app = express();
 app.use(cors()); // add this line
@@ -16,7 +25,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
+// Mount routers
+app.use("/api/v1/auth", auth);
 
 module.exports = app;
