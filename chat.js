@@ -68,14 +68,30 @@ class Connection {
 
   async getAllClient() {
     const allClient = [];
-    for (const entry of socketToUser.entries()) {
-      const clientSocketId = entry[0];
-      const clientUserId = entry[1];
-      const clientUsername = (await User.findById(clientUserId))?.username;
-      allClient.push({
-        id: clientSocketId,
-        username: clientUsername,
-      });
+    const allUser = await User.find();
+    for (const u of allUser) {
+      var isOnline = false;
+      for (const entry of socketToUser.entries()) {
+        const clientSocketId = entry[0];
+        const clientUserId = entry[1];
+        const clientUsername = (await User.findById(clientUserId))?.username;
+        if (u.username === clientUsername) {
+          isOnline = true;
+          allClient.push({
+            id: clientSocketId,
+            username: clientUsername,
+            status: "online",
+          });
+          break;
+        }
+      }
+      if (!isOnline) {
+        allClient.push({
+          id: null,
+          username: u.username,
+          status: "offline",
+        });
+      }
     }
     this.io.emit("getAllClient", allClient);
   }
