@@ -1,8 +1,11 @@
 const uuidv4 = require("uuid").v4;
+const jwt = require("jsonwebtoken");
+const User = require("./models/User");
 
 const messages = new Set();
 // const messages = new Map(); // roomId => {  }
-const users = new Map(); // userSocket => username
+const socketToUser = new Map(); // userSocket => User schema
+const users = new Set(); // User schema
 
 const messageExpirationTimeMS = 5 * 60 * 1000;
 
@@ -16,13 +19,16 @@ class Connection {
     this.io = io;
 
     // add new user with random username
-    users.set(socket, initUsername());
-    console.log(
-      `User connected socket id: ${
-        socket.id
-      } with initial username: ${users.get(socket)}`
-    );
-    console.log(`There are ${users.size} users now\n.`);
+    // users.set(socket, initUsername());
+    // console.log(
+    //   `User connected socket id: ${
+    //     socket.id
+    //   } with initial username: ${users.get(socket)}`
+    // );
+    // console.log(socket.data);
+    // console.log(`There are ${users.size} users now\n.`);
+
+    socket.on("setUserOnline", (token) => this.setUserOnline(token));
 
     socket.on("getMessages", () => this.getMessages());
     socket.on("message", (value) => this.handleMessage(value));
@@ -35,6 +41,16 @@ class Connection {
     });
   }
 
+  async setUserOnline(token) {
+    // console.log(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // console.log(decoded);
+    const user = await User.findById(decoded.id);
+    console.log(user.username);
+    socketToUser.set(this.socket, user);
+    users.add(user);
+  }
+
   sendMessage(message) {
     this.io.sockets.emit("message", message);
   }
@@ -44,13 +60,13 @@ class Connection {
   }
 
   getUsername() {
-    this.socket.emit("getUsername", users.get(this.socket));
+    this.socket.emit("getUsername", socketToUser.get(this.socket)?.username);
   }
 
   handleMessage(value) {
     const message = {
       id: uuidv4(),
-      user: users.get(this.socket),
+      user: socketToUser.get(this.socket).username,
       value,
       time: Date.now(),
     };
@@ -64,36 +80,46 @@ class Connection {
     }, messageExpirationTimeMS);
   }
 
-  checkDuplicateName(username) {
-    const allUsername = Array.from(users.values());
+  async checkDuplicateName(username) {
+    const allUsername = await User.find().select(username);
     if (allUsername.includes(username)) {
       return true;
     }
     return false;
   }
 
-  setUsername(username) {
+  async setUsername(username) {
+    console.log(socketToUser);
+    const oldUser = await User.find({ _id: socketToUser[this.socket]._id });
     if (this.checkDuplicateName(username)) {
       this.socket.emit("errorDuplicateUsername", username);
     } else {
-      users.set(this.socket, username);
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: socketToUser[this.socket]._id },
+        { username: username },
+        { new: true }
+      );
+      socketToUser.set(this.socket, updatedUser);
+      users.delete(oldUser);
+      users.add(updatedUser);
       this.socket.emit("getUsername", username);
     }
   }
 
   getAllClient() {
     const allClient = [];
-    for (const entry of users.entries()) {
+    for (const entry of socketToUser.entries()) {
       const clientSocket = entry[0];
       const clientSocketId = clientSocket.id;
-      const clientUsername = entry[1];
-      allClient.push({ id: clientSocketId, username: clientUsername });
+      const clientUser = entry[1];
+      allClient.push({ id: clientSocketId, username: clientUser.username });
     }
     this.socket.emit("getAllClient", allClient);
   }
 
   disconnect() {
-    users.delete(this.socket);
+    users.delete(socketToUser[this.socket]);
+    socketToUser.delete(this.socket);
   }
 }
 
