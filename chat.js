@@ -1,5 +1,12 @@
 const uuidv4 = require("uuid").v4;
 
+const {
+  User,
+  addUser,
+  editUsername,
+  getAllUsername,
+} = require("./models/User");
+
 const messages = new Set();
 // const messages = new Map(); // roomId => {  }
 const users = new Map(); // userSocket => username
@@ -16,7 +23,7 @@ class Connection {
     this.io = io;
 
     // add new user with random username
-    users.set(socket, initUsername());
+    users.set(socket, User[0].username);
     console.log(
       `User connected socket id: ${
         socket.id
@@ -76,19 +83,38 @@ class Connection {
     if (this.checkDuplicateName(username)) {
       this.socket.emit("errorDuplicateUsername", username);
     } else {
+      editUsername(users.get(this.socket), username);
       users.set(this.socket, username);
       this.socket.emit("getUsername", username);
+      console.log("===");
     }
   }
 
   getAllClient() {
     const allClient = [];
-    for (const entry of users.entries()) {
-      const clientSocket = entry[0];
-      const clientSocketId = clientSocket.id;
-      const clientUsername = entry[1];
-      allClient.push({ id: clientSocketId, username: clientUsername });
+    const allUsername = getAllUsername();
+    for (const u of allUsername) {
+      var isOnline = false;
+      for (const entry of users.entries()) {
+        const clientSocket = entry[0];
+        const clientSocketId = clientSocket.id;
+        const clientUsername = entry[1];
+        if (u === clientUsername) {
+          isOnline = true;
+          allClient.push({ status: "online", id: clientSocketId, username: u });
+          break;
+        }
+      }
+      if (!isOnline) {
+        allClient.push({ status: "offline", id: null, username: u });
+      }
     }
+    // for (const entry of users.entries()) {
+    //   const clientSocket = entry[0];
+    //   const clientSocketId = clientSocket.id;
+    //   const clientUsername = entry[1];
+    //   allClient.push({ id: clientSocketId, username: clientUsername });
+    // }
     this.socket.emit("getAllClient", allClient);
   }
 
