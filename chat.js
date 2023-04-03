@@ -53,7 +53,6 @@ class Connection {
   async setUsername(username) {
     const isDuplicate = await this.checkDuplicateName(username);
     if (isDuplicate) {
-      console.log("aaa");
       this.socket.emit("errorDuplicateUsername", username);
     } else {
       const userId = socketToUser.get(this.socket.id);
