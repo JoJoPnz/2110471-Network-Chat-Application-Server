@@ -71,19 +71,13 @@ class Connection {
     const allUser = await User.find();
     for (const u of allUser) {
       var isOnline = false;
-      for (const entry of socketToUser.entries()) {
-        const clientSocketId = entry[0];
-        const clientUserId = entry[1];
-        const clientUsername = (await User.findById(clientUserId))?.username;
-        if (u.username === clientUsername) {
-          isOnline = true;
-          allClient.push({
-            id: clientSocketId,
-            username: clientUsername,
-            status: "online",
-          });
-          break;
-        }
+      if (users.has(String(u._id))) {
+        isOnline = true;
+        allClient.push({
+          id: "clientSocketId",
+          username: u.username,
+          status: "online",
+        });
       }
       if (!isOnline) {
         allClient.push({
