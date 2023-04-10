@@ -2,7 +2,8 @@ const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 
 // const messages = new Map(); // roomId => { )
-const socketToUser = new Map(); // userSocketId => userId
+const socketToUser = new Map(); // socketId => userId
+const userToSocket = new Map(); // userId => socketId
 const users = new Set(); // all online userId
 
 class Connection {
@@ -29,6 +30,7 @@ class Connection {
       this.socket.emit("error", "This user is already login");
     } else {
       socketToUser.set(this.socket.id, userId);
+      userToSocket.set(userId, this.socket.id);
       users.add(userId);
 
       this.getUsername();
@@ -71,10 +73,11 @@ class Connection {
     const allUser = await User.find();
     for (const u of allUser) {
       var isOnline = false;
-      if (users.has(String(u._id))) {
+      const userId = String(u._id);
+      if (users.has(userId)) {
         isOnline = true;
         allClient.push({
-          id: "clientSocketId",
+          id: userToSocket.get(userId),
           username: u.username,
           status: "online",
         });
@@ -90,10 +93,11 @@ class Connection {
     this.io.emit("getAllClient", allClient);
   }
 
-  disconnect() {
+  async disconnect() {
+    userToSocket.delete(socketToUser.get(this.socket.id));
     users.delete(socketToUser.get(this.socket.id));
     socketToUser.delete(this.socket.id);
-    this.getAllClient();
+    await this.getAllClient();
   }
 }
 
