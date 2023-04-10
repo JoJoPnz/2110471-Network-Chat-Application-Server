@@ -10,6 +10,11 @@ const GroupSchema = new mongoose.Schema({
     ref: "User",
     default: [],
   },
+  messages: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "Message",
+    default: [],
+  },
 });
 
 module.exports = mongoose.model("Group", GroupSchema);
