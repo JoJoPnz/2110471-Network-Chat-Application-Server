@@ -4,6 +4,7 @@ const GroupSchema = new mongoose.Schema({
   name: {
     type: String,
     unique: true,
+    required: [true, "Please add a group name"],
   },
   users: {
     type: [mongoose.Schema.Types.ObjectId],
