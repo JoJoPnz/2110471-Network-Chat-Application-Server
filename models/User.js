@@ -28,6 +28,11 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  groups: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "Group",
+    default: [],
+  },
 });
 
 //Encrypt password using bcrypt
