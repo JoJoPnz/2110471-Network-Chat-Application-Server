@@ -6,8 +6,7 @@ var cors = require("cors");
 
 // Route files
 const auth = require("./routes/auth");
-const messages = require("./routes/messages");
-const group = require("./routes/groups");
+const groups = require("./routes/groups");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 
@@ -28,7 +27,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Mount routers
 app.use("/api/v1/auth", auth);
-app.use("/api/v1/messages", messages);
-app.use("/api/v1/groups", group);
+app.use("/api/v1/groups", groups);
 
 module.exports = app;

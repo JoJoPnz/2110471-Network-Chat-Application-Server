@@ -11,7 +11,7 @@ const MessageSchema = new mongoose.Schema({
     enum: Object.values(UserType),
     required: true,
   },
-  sender: {
+  senderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: function () {
@@ -39,4 +39,4 @@ const MessageSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Message", MessageSchema);
+module.exports = { MessageSchema };

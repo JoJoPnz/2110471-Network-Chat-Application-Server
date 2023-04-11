@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { MessageSchema } = require("./Message");
 
 const GroupSchema = new mongoose.Schema({
   name: {
@@ -12,8 +13,7 @@ const GroupSchema = new mongoose.Schema({
     default: [],
   },
   messages: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "Message",
+    type: [MessageSchema],
     default: [],
   },
 });
