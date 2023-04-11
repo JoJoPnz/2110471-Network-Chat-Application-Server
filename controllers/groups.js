@@ -5,10 +5,19 @@ const Group = require("../models/Group");
 //@access   Private
 exports.getAllGroups = async (req, res, next) => {
   try {
-    const groups = await Group.find({}).populate({
-      path: "users",
-      select: "username email",
-    });
+    const groups = await Group.find({})
+      .populate({
+        path: "users",
+        select: "username email",
+      })
+      .populate({
+        path: "messages",
+        populate: {
+          path: "senderId",
+          model: "User",
+          select: "username email",
+        },
+      });
     return res
       .status(200)
       .json({ success: true, count: groups.length, data: groups });
@@ -26,10 +35,19 @@ exports.getAllGroups = async (req, res, next) => {
 exports.getSingleGroup = async (req, res, next) => {
   try {
     const groupId = req.params.id;
-    const group = await Group.findById(groupId).populate({
-      path: "users",
-      select: "username email",
-    });
+    const group = await Group.findById(groupId)
+      .populate({
+        path: "users",
+        select: "username email",
+      })
+      .populate({
+        path: "messages",
+        populate: {
+          path: "senderId",
+          model: "User",
+          select: "username email",
+        },
+      });
 
     if (!group) {
       return res.status(404).json({
