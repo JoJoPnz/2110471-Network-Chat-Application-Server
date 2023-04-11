@@ -80,7 +80,14 @@ class Connection {
   }
 
   async getAllGroup() {
-    const groups = await Group.find();
+    const groups = await Group.find().populate({
+      path: "messages",
+      populate: {
+        path: "sender",
+        model: "User",
+        select: "username email",
+      },
+    });
     this.io.emit("getAllGroup", groups);
   }
 

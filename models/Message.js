@@ -11,7 +11,7 @@ const MessageSchema = new mongoose.Schema({
     enum: Object.values(UserType),
     required: true,
   },
-  senderId: {
+  sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: function () {

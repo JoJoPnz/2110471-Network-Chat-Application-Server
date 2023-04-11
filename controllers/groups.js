@@ -13,7 +13,7 @@ exports.getAllGroups = async (req, res, next) => {
       .populate({
         path: "messages",
         populate: {
-          path: "senderId",
+          path: "sender",
           model: "User",
           select: "username email",
         },
@@ -43,7 +43,7 @@ exports.getSingleGroup = async (req, res, next) => {
       .populate({
         path: "messages",
         populate: {
-          path: "senderId",
+          path: "sender",
           model: "User",
           select: "username email",
         },
