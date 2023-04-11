@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
+const Group = require("./models/Group");
 
 // const messages = new Map(); // roomId => { )
 const socketToUser = new Map(); // socketId => userId
@@ -14,11 +15,15 @@ class Connection {
     socket.on("setUserOnline", (token) => this.setUserOnline(token));
     socket.on("getUsername", () => this.getUsername());
     socket.on("setUsername", (username) => this.setUsername(username));
+    socket.on("createGroup", (groupName) => this.createGroup(groupName));
+    socket.on("getAllGroup", () => this.getAllGroup());
     socket.on("getAllClient", () => this.getAllClient());
     socket.on("disconnect", () => this.disconnect());
     socket.on("connect_error", (err) => {
       console.log(`connect_error due to ${err.message}`);
     });
+
+    this.getAllGroup();
   }
 
   async setUserOnline(token) {
@@ -31,10 +36,10 @@ class Connection {
       return;
     }
 
-    if (users.has(userId) && userToSocket.get(userId) !== this.socket.id) {
-      this.socket.emit("error", "This user is already login");
-      return;
-    }
+    // if (users.has(userId) && userToSocket.get(userId) !== this.socket.id) {
+    //   this.socket.emit("error", "This user is already login");
+    //   return;
+    // }
 
     socketToUser.set(this.socket.id, userId);
     userToSocket.set(userId, this.socket.id);
@@ -71,6 +76,23 @@ class Connection {
       );
       this.socket.emit("getUsername", username);
       this.getAllClient();
+    }
+  }
+
+  async getAllGroup() {
+    const groups = await Group.find();
+    this.io.emit("getAllGroup", groups);
+  }
+
+  async createGroup(groupName) {
+    const userId = socketToUser.get(this.socket.id);
+    try {
+      await Group.create({ name: groupName, users: [userId] });
+      this.getAllGroup();
+    } catch (err) {
+      if (err.code && err.code === 11000) {
+        this.socket.emit("errorDuplicateGroupName", groupName);
+      }
     }
   }
 
