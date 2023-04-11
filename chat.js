@@ -12,7 +12,6 @@ class Connection {
     this.io = io;
 
     socket.on("setUserOnline", (token) => this.setUserOnline(token));
-
     socket.on("getUsername", () => this.getUsername());
     socket.on("setUsername", (username) => this.setUsername(username));
     socket.on("getAllClient", () => this.getAllClient());
@@ -26,16 +25,23 @@ class Connection {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
 
-    if (users.has(userId)) {
-      this.socket.emit("error", "This user is already login");
-    } else {
-      socketToUser.set(this.socket.id, userId);
-      userToSocket.set(userId, this.socket.id);
-      users.add(userId);
-
-      this.getUsername();
-      this.getAllClient();
+    const user = await User.findById(userId);
+    if (!user) {
+      this.socket.emit("error", "User not found");
+      return;
     }
+
+    if (users.has(userId) && userToSocket.get(userId) !== this.socket.id) {
+      this.socket.emit("error", "This user is already login");
+      return;
+    }
+
+    socketToUser.set(this.socket.id, userId);
+    userToSocket.set(userId, this.socket.id);
+    users.add(userId);
+
+    this.getUsername();
+    this.getAllClient();
   }
 
   async getUsername() {
