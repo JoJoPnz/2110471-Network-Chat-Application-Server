@@ -24,14 +24,14 @@ const UserSchema = new mongoose.Schema({
     minLength: 5,
     select: false,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
   groups: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: "Group",
     default: [],
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 

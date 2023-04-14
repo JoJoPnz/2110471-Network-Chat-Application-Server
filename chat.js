@@ -13,17 +13,36 @@ class Connection {
     this.io = io;
 
     socket.on("setUserOnline", (token) => this.setUserOnline(token));
+    socket.on("getAllClient", () => this.getAllClient());
+    // username
     socket.on("getUsername", () => this.getUsername());
     socket.on("setUsername", (username) => this.setUsername(username));
+    // group
     socket.on("createGroup", (groupName) => this.createGroup(groupName));
     socket.on("getAllGroup", () => this.getAllGroup());
-    socket.on("getAllClient", () => this.getAllClient());
+    // chatGroup
+    socket.on("updateChatGroup", (groupId) => this.updateChatGroup(groupId));
+
     socket.on("disconnect", () => this.disconnect());
     socket.on("connect_error", (err) => {
       console.log(`connect_error due to ${err.message}`);
     });
 
     this.getAllGroup();
+  }
+
+  async updateChatGroup(groupId) {
+    const groups = await Group.find().populate({
+      path: "messages",
+      populate: {
+        path: "sender",
+        model: "User",
+        select: "username email",
+      },
+    });
+    // console.log(groupId);
+    // console.log(this.io.sockets.adapter.rooms);
+    this.io.in(groupId).emit("getAllGroup", groups);
   }
 
   async setUserOnline(token) {
@@ -47,6 +66,15 @@ class Connection {
 
     this.getUsername();
     this.getAllClient();
+    this.joinGroupFromDB();
+  }
+
+  async joinGroupFromDB() {
+    const userId = socketToUser.get(this.socket.id);
+    const groups = (await User.findById(userId))?.groups;
+    groups.map((groupId) => {
+      this.socket.join(String(groupId));
+    });
   }
 
   async getUsername() {
@@ -94,8 +122,13 @@ class Connection {
   async createGroup(groupName) {
     const userId = socketToUser.get(this.socket.id);
     try {
-      await Group.create({ name: groupName, users: [userId] });
+      const group = await Group.create({ name: groupName, users: [userId] });
       this.getAllGroup();
+      // socket join group
+      // option 1:
+      // this.socket.join(String(group._id));
+      // option 2:
+      this.joinGroupFromDB();
     } catch (err) {
       if (err.code && err.code === 11000) {
         this.socket.emit("errorDuplicateGroupName", groupName);
