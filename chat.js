@@ -18,7 +18,7 @@ class Connection {
     socket.on("getUsername", () => this.getUsername());
     socket.on("setUsername", (username) => this.setUsername(username));
     // group
-    socket.on("createGroup", (groupName) => this.createGroup(groupName));
+    socket.on("createGroup", () => this.createGroup());
     socket.on("getAllGroup", () => this.getAllGroup());
     // chatGroup
     socket.on("updateChatGroup", (groupId) => this.updateChatGroup(groupId));
@@ -119,21 +119,9 @@ class Connection {
     this.io.emit("getAllGroup", groups);
   }
 
-  async createGroup(groupName) {
-    const userId = socketToUser.get(this.socket.id);
-    try {
-      const group = await Group.create({ name: groupName, users: [userId] });
-      this.getAllGroup();
-      // socket join group
-      // option 1:
-      // this.socket.join(String(group._id));
-      // option 2:
-      this.joinGroupFromDB();
-    } catch (err) {
-      if (err.code && err.code === 11000) {
-        this.socket.emit("errorDuplicateGroupName", groupName);
-      }
-    }
+  async createGroup() {
+    this.getAllGroup();
+    this.joinGroupFromDB();
   }
 
   async getAllClient() {

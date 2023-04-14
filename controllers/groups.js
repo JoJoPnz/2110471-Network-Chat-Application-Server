@@ -76,10 +76,9 @@ exports.createGroup = async (req, res, next) => {
       name: name,
       users: [req.user.id],
     });
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $addToSet: { groups: group._id } },
-      { new: true }
+    await User.updateOne(
+      { _id: req.user.id },
+      { $addToSet: { groups: group._id } }
     );
     return res.status(200).json({ success: true, data: group });
   } catch (err) {
@@ -93,6 +92,41 @@ exports.createGroup = async (req, res, next) => {
     return res.status(500).json({
       success: false,
       message: `Cannot create Group'`,
+    });
+  }
+};
+
+//@desc     Update group name
+//@route    PATCH /api/v1/groups/name
+//@access   Private
+exports.updateGroupName = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const userId = req.user.id;
+    const groupId = req.body.groupId;
+    const group = await Group.findById(groupId);
+    const name = req.body.name;
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: `No Group with the id of ${groupId}`,
+      });
+    }
+
+    if (!group.users.includes(userId)) {
+      return res.status(403).json({ message: "User not in group" });
+    }
+
+    group.name = name;
+    await group.save();
+
+    return res.status(200).json({ success: true, data: group });
+  } catch (err) {
+    console.log(err.stack);
+    return res.status(500).json({
+      success: false,
+      message: `Cannot update group name`,
     });
   }
 };
