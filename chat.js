@@ -32,17 +32,7 @@ class Connection {
   }
 
   async updateChatGroup(groupId) {
-    const groups = await Group.find().populate({
-      path: "messages",
-      populate: {
-        path: "sender",
-        model: "User",
-        select: "username email",
-      },
-    });
-    // console.log(groupId);
-    // console.log(this.io.sockets.adapter.rooms);
-    this.io.in(groupId).emit("getAllGroup", groups);
+    this.io.in(groupId).emit("updateChatGroup", groupId);
   }
 
   async setUserOnline(token) {
