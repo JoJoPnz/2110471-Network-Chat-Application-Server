@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const UserType = Object.freeze({
+const MessageType = Object.freeze({
   User: "User",
   System: "System",
 });
@@ -8,25 +8,25 @@ const UserType = Object.freeze({
 const MessageSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: Object.values(UserType),
+    enum: Object.values(MessageType),
     required: true,
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: function () {
-      return this.type === UserType.User;
+      return this.type === MessageType.User;
     },
     // ensure that the field value is null when the type field is System,
     // even if the sender field value is set.
     validate: {
       validator: function (v) {
-        return this.type === UserType.System ? v === null : true;
+        return this.type === MessageType.System ? v === null : true;
       },
       message: "Sender must be null when type is System",
     },
     default: function () {
-      return this.type === UserType.System ? null : undefined;
+      return this.type === MessageType.System ? null : undefined;
     },
   },
   text: {

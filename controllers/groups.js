@@ -6,19 +6,10 @@ const User = require("../models/User");
 //@access   Private
 exports.getAllGroups = async (req, res, next) => {
   try {
-    const groups = await Group.find({})
-      .populate({
-        path: "users",
-        select: "username email",
-      })
-      .populate({
-        path: "messages",
-        populate: {
-          path: "sender",
-          model: "User",
-          select: "username email",
-        },
-      });
+    const groups = await Group.find().select("-messages").populate({
+      path: "users",
+      select: "username email",
+    });
     return res
       .status(200)
       .json({ success: true, count: groups.length, data: groups });
@@ -75,6 +66,12 @@ exports.createGroup = async (req, res, next) => {
     const group = await Group.create({
       name: name,
       users: [req.user.id],
+      messages: [
+        {
+          type: "System",
+          text: `${req.user.username} join the group`,
+        },
+      ],
     });
     await User.updateOne(
       { _id: req.user.id },
@@ -150,11 +147,15 @@ exports.joinGroup = async (req, res, next) => {
 
     // add group to user
     await User.updateOne({ _id: userId }, { $addToSet: { groups: groupId } });
-    // user.groups.addToSet(groupId);
-    // await user.save();
 
     // add user to group
     group.users.addToSet(userId);
+    // add message user join group
+    group.messages.push({
+      type: "System",
+      text: `${user.username} join the group`,
+    });
+
     await group.save();
 
     return res.status(200).json({ success: true, data: group });
@@ -186,15 +187,16 @@ exports.leaveGroup = async (req, res, next) => {
 
     // delete group from user
     await User.updateOne({ _id: userId }, { $pull: { groups: groupId } });
-    // user.groups = user.groups.filter(
-    //   (id) => id.toString() !== groupId.toString()
-    // );
-    // await user.save();
 
     // delete user from group
     group.users = group.users.filter(
       (id) => id.toString() !== userId.toString()
     );
+    // add message user leave group
+    group.messages.push({
+      type: "System",
+      text: `${user.username} leave the group`,
+    });
     await group.save();
 
     return res.status(200).json({ success: true, data: group });
