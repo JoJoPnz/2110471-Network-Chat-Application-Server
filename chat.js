@@ -23,6 +23,8 @@ class Connection {
     // chatGroup
     socket.on("updateChatGroup", (groupId) => this.updateChatGroup(groupId));
 
+    socket.on("newDM", (receiverId) => this.updateDM(receiverId));
+
     socket.on("disconnect", () => this.disconnect());
     socket.on("connect_error", (err) => {
       console.log(`connect_error due to ${err.message}`);
@@ -124,6 +126,7 @@ class Connection {
         isOnline = true;
         allClient.push({
           id: userToSocket.get(userId),
+          userId: u.id,
           username: u.username,
           status: "online",
         });
@@ -131,12 +134,17 @@ class Connection {
       if (!isOnline) {
         allClient.push({
           id: null,
+          userId: u.id,
           username: u.username,
           status: "offline",
         });
       }
     }
     this.io.emit("getAllClient", allClient);
+  }
+
+  async updateDM(receiverId) {
+    this.io.emit("newDM", receiverId);
   }
 
   async disconnect() {

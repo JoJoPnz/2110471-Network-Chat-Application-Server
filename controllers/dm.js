@@ -86,7 +86,7 @@ exports.findChatForGetDm = async (srcUserId, destUserId) => {
 exports.getOrCreateDm = async (req, res, next) => {
   try {
     const srcUserId = req.user.id;
-    const destUserId = req.body.receiver;
+    const destUserId = req.params.receiver;
     if (srcUserId === destUserId) {
       return res.status(400).json({
         success: false,
@@ -134,6 +134,8 @@ exports.addMessageGroup = async (req, res, next) => {
       });
     }
 
+    console.log(senderId, receiverId, message);
+
     // sender must LT receiver
     const dm = await this.findChatForAddMessage(senderId, receiverId);
 
@@ -143,7 +145,7 @@ exports.addMessageGroup = async (req, res, next) => {
         message: "receiver with given ID not exist",
       });
     }
-    const tmpMessage = Object.assign({}, {type: "User"}, {text: message}, { sender: senderId });
+    const tmpMessage = Object.assign({}, message, { sender: senderId });
 
     dm.messages.push(tmpMessage);
     await dm.save();
